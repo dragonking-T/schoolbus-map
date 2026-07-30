@@ -47,6 +47,11 @@
     .tool { display:inline-block; margin-bottom:8px; background:rgba(7,17,31,.83); color:#fff; border:1px solid rgba(255,255,255,.15); border-radius:14px; padding:10px 12px; font-size:13px; box-shadow:0 10px 25px rgba(0,0,0,.22); }
     .key-warning { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); z-index:30; max-width:560px; padding:22px; border-radius:22px; background:rgba(7,17,31,.94); border:1px solid rgba(255,255,255,.16); box-shadow:0 30px 80px rgba(0,0,0,.38); display:none; }
     .key-warning h2 { margin:0 0 10px; } .key-warning code { background:rgba(255,255,255,.1); padding:2px 6px; border-radius:6px; }
+ .key-warning label { display:block; margin:12px 0 6px; color:#d9e8ff; font-size:13px; font-weight:800; }
+ .key-input { width:100%; border:1px solid rgba(255,255,255,.16); background:rgba(255,255,255,.08); color:#fff; padding:12px 13px; border-radius:13px; outline:0; font-size:13px; }
+ .key-input:focus { border-color:#1677ff; box-shadow:0 0 0 3px rgba(22,119,255,.18); }
+ .key-actions { display:flex; gap:10px; margin-top:14px; flex-wrap:wrap; }
+ .key-help { color:var(--muted); font-size:12px; line-height:1.6; }
     .detail-route { display:flex; align-items:center; gap:12px; }
     .big-num { width:54px; height:54px; border-radius:18px; display:grid; place-items:center; font-weight:900; font-size:24px; color:#06111f; flex:none; }
     .stat-row { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:16px 0; }
@@ -100,9 +105,10 @@
   </section>
 </div>
 <script>
-// 高德 JS API 通常有免費額度，但必須申請 Web 端 Key。填好後直接打開/上傳 GitHub Pages 即可。
-const AMAP_KEY = '請填入你的高德Web端Key';
-const AMAP_SECURITY_JSCODE = ''; // 如控制台要求安全密鑰，填這裡；否則留空。
+// 高德 JS API 通常有免費額度，但必須申請 Web 端 Key。
+// 不要把真實 Key 寫入代碼；頁面會從 URL 參數或 localStorage 讀取。
+const AMAP_KEY = '';
+const AMAP_SECURITY_JSCODE = '';
 
 const school = { name: '香港真光小學（近似）', lat: 22.2769, lng: 114.1928 };
 const colors = {1:'#e63946',2:'#f77f00',3:'#f9c74f',4:'#90be6d',5:'#43aa8b',6:'#4d96ff',7:'#7b2cbf',8:'#ff6bcb',9:'#8d99ae'};
@@ -124,16 +130,38 @@ const markerOverlays = new Map();
 let selectedRouteId = 1;
 let visibleRoutes = new Set(routes.map(r => r.id));
 
+function getAmapCredentials() {
+const params = new URLSearchParams(window.location.search);
+const urlKey = params.get('amapKey') || params.get('key') || '';
+const urlCode = params.get('amapCode') || params.get('jscode') || params.get('amapSecurity') || '';
+if (urlKey) {
+localStorage.setItem('schoolbus.amapKey', urlKey);
+localStorage.setItem('schoolbus.amapCode', urlCode);
+params.delete('amapKey'); params.delete('key'); params.delete('amapCode'); params.delete('jscode'); params.delete('amapSecurity');
+const clean = `${window.location.pathname}${params.toString() ? '?' + params.toString() : ''}${window.location.hash}`;
+window.history.replaceState({}, document.title, clean);
+}
+return {
+key: AMAP_KEY || urlKey || localStorage.getItem('schoolbus.amapKey') || '',
+code: AMAP_SECURITY_JSCODE || urlCode || localStorage.getItem('schoolbus.amapCode') || ''
+};
+}
+function showKeyPanel() {
+const saved = getAmapCredentials();
+document.getElementById('amapKeyInput').value = saved.key || '';
+document.getElementById('amapCodeInput').value = saved.code || '';
+document.getElementById('keyWarning').style.display = 'block';
+}
+function hideKeyPanel() { document.getElementById('keyWarning').style.display = 'none'; }
 function loadAmap() {
-  if (!AMAP_KEY || AMAP_KEY.includes('請填入')) {
-    document.getElementById('keyWarning').style.display = 'block';
-    return;
-  }
-  if (AMAP_SECURITY_JSCODE) window._AMapSecurityConfig = { securityJsCode: AMAP_SECURITY_JSCODE };
-  const script = document.createElement('script');
-  script.src = `https://webapi.amap.com/maps?v=2.0&key=${encodeURIComponent(AMAP_KEY)}&callback=initMap`;
-  script.onerror = () => { document.getElementById('keyWarning').style.display = 'block'; };
-  document.head.appendChild(script);
+const creds = getAmapCredentials();
+if (!creds.key) { showKeyPanel(); return; }
+hideKeyPanel();
+if (creds.code) window._AMapSecurityConfig = { securityJsCode: creds.code };
+const script = document.createElement('script');
+script.src = `https://webapi.amap.com/maps?v=2.0&key=${encodeURIComponent(creds.key)}&callback=initMap`;
+script.onerror = () => { showKeyPanel(); };
+document.head.appendChild(script);
 }
 window.initMap = function initMap() {
   map = new AMap.Map('map', {
@@ -246,6 +274,21 @@ document.getElementById('clearAllBtn').addEventListener('click', () => routes.fo
 document.getElementById('fitVisibleBtn').addEventListener('click', fitVisible);
 document.getElementById('focusSchoolBtn').addEventListener('click', () => map ? map.setZoomAndCenter(15, [school.lng, school.lat]) : null);
 document.getElementById('timebar').addEventListener('click', e => { const chip = e.target.closest('[data-timeline-route]'); if (chip) selectRoute(Number(chip.dataset.timelineRoute), true); });
+document.getElementById('saveAmapKeyBtn').addEventListener('click', () => {
+const key = document.getElementById('amapKeyInput').value.trim();
+const code = document.getElementById('amapCodeInput').value.trim();
+if (!key) { alert('請先輸入高德 Web 端 Key'); return; }
+localStorage.setItem('schoolbus.amapKey', key);
+localStorage.setItem('schoolbus.amapCode', code);
+window.location.reload();
+});
+document.getElementById('clearAmapKeyBtn').addEventListener('click', () => {
+localStorage.removeItem('schoolbus.amapKey');
+localStorage.removeItem('schoolbus.amapCode');
+document.getElementById('amapKeyInput').value = '';
+document.getElementById('amapCodeInput').value = '';
+alert('已清除本機保存的高德 Key');
+});
 renderLegend(); renderAll(); loadAmap();
 </script>
 </body>
