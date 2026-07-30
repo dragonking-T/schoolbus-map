@@ -1,0 +1,10 @@
+# Local/private files
+*.pdf
+*.png
+*.jpg
+*.jpeg
+*.heic
+*.DS_Store
+.env
+.env.*
+node_modules/

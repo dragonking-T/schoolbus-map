@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>香港真光小學校車路線圖｜離線版</title>
+  <style>
+    :root {
+      --bg: #07111f;
+      --panel: rgba(10, 22, 40, .9);
+      --line: rgba(255,255,255,.12);
+      --text: #f7fbff;
+      --muted: #94a9c6;
+      --school: #f9c74f;
+      --blue: #1f7aff;
+      --r1:#e63946; --r2:#f77f00; --r3:#f9c74f; --r4:#90be6d; --r5:#43aa8b; --r6:#4d96ff; --r7:#7b2cbf; --r8:#ff6bcb; --r9:#8d99ae;
+    }
+    * { box-sizing: border-box; }
+ html, body { width:100%; height:100%; }
+    body { margin:0; font-family:-apple-system, BlinkMacSystemFont, "PingFang TC", "PingFang HK", "Microsoft JhengHei", sans-serif; background:var(--bg); color:var(--text); }
+    button, input { font-family: inherit; }
+ .app { width:100vw; height:100vh; display:grid; grid-template-columns: 370px minmax(0, 1fr) 400px; grid-template-rows: 74px minmax(0, 1fr) 156px; overflow:hidden; }
+    header { grid-column:1 / 4; display:flex; align-items:center; justify-content:space-between; padding:0 24px; border-bottom:1px solid var(--line); background:rgba(7,17,31,.94); backdrop-filter: blur(16px); z-index:20; }
+    .brand { display:flex; align-items:center; gap:14px; }
+    .logo { width:42px; height:42px; border-radius:14px; background:linear-gradient(135deg,#f9c74f,#f9844a); display:grid; place-items:center; font-weight:900; color:#111; box-shadow:0 12px 34px rgba(249,199,79,.25); }
+    h1 { margin:0; font-size:20px; letter-spacing:.02em; }
+    .subtitle { font-size:12px; color:var(--muted); margin-top:2px; }
+    .top-actions { display:flex; gap:10px; align-items:center; }
+    .pill { border:1px solid var(--line); background:rgba(255,255,255,.06); color:var(--text); padding:9px 12px; border-radius:999px; font-size:13px; cursor:pointer; }
+    .pill:hover { background:rgba(255,255,255,.1); }
+    .primary { background:var(--blue); border-color:var(--blue); }
+    aside.left { grid-column:1; grid-row:2 / 4; border-right:1px solid var(--line); background:var(--panel); backdrop-filter: blur(18px); padding:18px; overflow:auto; z-index:10; }
+ main.map { grid-column:2; grid-row:2; position:relative; overflow:hidden; background:#10233a; min-width:0; min-height:0; }
+ #map { position:relative; display:block; width:100%; height:100%; min-height:420px; z-index:1; }
+    aside.right { grid-column:3; grid-row:2 / 4; border-left:1px solid var(--line); background:var(--panel); backdrop-filter: blur(18px); padding:18px; overflow:auto; z-index:10; }
+    .timeline { grid-column:2; grid-row:3; border-top:1px solid var(--line); background:rgba(7,17,31,.92); padding:18px 24px; z-index:10; }
+    .search { width:100%; border:1px solid var(--line); background:rgba(255,255,255,.07); color:var(--text); padding:13px 14px; border-radius:14px; outline:0; font-size:14px; }
+    .section-title { margin:20px 0 12px; color:#d9e8ff; font-size:14px; font-weight:800; letter-spacing:.06em; display:flex; justify-content:space-between; align-items:center; }
+    .bulk-actions { display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin:12px 0 4px; }
+    .small-btn { border:1px solid var(--line); border-radius:12px; background:rgba(255,255,255,.06); color:var(--text); padding:9px; cursor:pointer; }
+    .small-btn:hover { background:rgba(255,255,255,.1); }
+    .route-list { display:flex; flex-direction:column; gap:10px; }
+    .route-card { border:1px solid var(--line); background:rgba(255,255,255,.055); border-radius:18px; padding:13px; cursor:pointer; transition:.18s ease; }
+    .route-card.active, .route-card:hover { transform:translateY(-1px); border-color:rgba(255,255,255,.32); background:rgba(255,255,255,.09); }
+    .route-card.dimmed { opacity:.45; }
+    .route-head { display:grid; grid-template-columns: 28px 1fr auto; align-items:center; gap:10px; }
+    .route-check { width:18px; height:18px; accent-color: var(--blue); cursor:pointer; }
+    .route-name { display:flex; align-items:center; gap:10px; font-weight:800; min-width:0; }
+    .route-name span:last-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .dot { width:14px; height:14px; border-radius:50%; box-shadow:0 0 0 4px rgba(255,255,255,.06); flex:none; }
+    .meta { margin-top:8px; color:var(--muted); font-size:12px; display:flex; justify-content:space-between; }
+    .legend-grid { display:grid; grid-template-columns: repeat(3,1fr); gap:8px; }
+    .legend-item { border:1px solid var(--line); border-radius:12px; padding:8px; font-size:12px; display:flex; align-items:center; gap:8px; background:rgba(255,255,255,.04); }
+    .map-tools { position:absolute; top:18px; left:18px; display:flex; flex-direction:column; gap:9px; z-index:5; pointer-events:none; }
+    .tool { background:rgba(7,17,31,.82); border:1px solid var(--line); border-radius:14px; padding:10px 12px; font-size:13px; box-shadow:0 10px 25px rgba(0,0,0,.25); }
+    .layer-note { position:absolute; right:18px; bottom:18px; background:rgba(7,17,31,.84); border:1px solid var(--line); border-radius:16px; padding:12px 14px; font-size:12px; color:var(--muted); max-width:380px; z-index:5; box-shadow:0 10px 25px rgba(0,0,0,.25); }
+    .detail-route { display:flex; align-items:center; gap:12px; }
+    .big-num { width:54px; height:54px; border-radius:18px; display:grid; place-items:center; font-weight:900; font-size:24px; color:#06111f; flex:none; }
+    .stat-row { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:16px 0; }
+    .stat { border:1px solid var(--line); border-radius:16px; padding:12px; background:rgba(255,255,255,.05); }
+    .stat b { display:block; font-size:18px; } .stat span { color:var(--muted); font-size:12px; }
+    .stop-list { display:flex; flex-direction:column; gap:0; border:1px solid var(--line); border-radius:18px; overflow:hidden; }
+    .stop { display:grid; grid-template-columns:45px 58px 1fr; gap:10px; padding:11px 12px; border-bottom:1px solid var(--line); background:rgba(255,255,255,.04); align-items:center; cursor:pointer; }
+    .stop:hover { background:rgba(255,255,255,.09); }
+    .stop:last-child { border-bottom:0; }
+    .idx { width:26px; height:26px; border-radius:10px; display:grid; place-items:center; font-size:12px; font-weight:900; color:#06111f; }
+    .time { font-weight:800; color:#fff; font-variant-numeric:tabular-nums; }
+    .place { color:#d9e8ff; font-size:13px; line-height:1.35; }
+    .timeline h3 { margin:0 0 13px; font-size:14px; color:#d9e8ff; }
+    .timebar { position:relative; height:56px; border-radius:18px; background:rgba(255,255,255,.06); border:1px solid var(--line); overflow:hidden; }
+    .tick { position:absolute; top:0; bottom:0; width:1px; background:rgba(255,255,255,.16); }
+    .tick span { position:absolute; top:8px; left:6px; font-size:11px; color:var(--muted); }
+    .route-chip { position:absolute; height:18px; border-radius:999px; opacity:.92; cursor:pointer; }
+    .route-chip.off { opacity:.18; }
+    .annotation { margin-top:12px; color:var(--muted); font-size:12px; }
+    .leaflet-container { background:#0d2038; font-family:-apple-system, BlinkMacSystemFont, "PingFang TC", "PingFang HK", "Microsoft JhengHei", sans-serif; }
+    .leaflet-popup-content-wrapper, .leaflet-popup-tip { background:#07111f; color:#f7fbff; border:1px solid rgba(255,255,255,.14); }
+    .leaflet-popup-content { margin:12px 14px; line-height:1.55; }
+    .school-marker { background:var(--school); border:3px solid white; border-radius:16px; color:#111; font-weight:900; display:grid; place-items:center; box-shadow:0 10px 28px rgba(0,0,0,.35); }
+    .stop-marker { border:3px solid white; border-radius:999px; box-shadow:0 8px 18px rgba(0,0,0,.32); color:#06111f; font-size:10px; font-weight:900; display:grid; place-items:center; }
+    .map-label { background:rgba(7,17,31,.78); color:#fff; border:1px solid rgba(255,255,255,.14); border-radius:999px; padding:3px 7px; font-size:11px; white-space:nowrap; box-shadow:0 6px 16px rgba(0,0,0,.28); }
+    @media(max-width:1180px){ .app{grid-template-columns:330px minmax(0,1fr); grid-template-rows:74px minmax(0,1fr) auto auto;} aside.right{grid-column:1/3; grid-row:4;} .timeline{grid-column:2; grid-row:3;} }
+  
+ /* Stable static-page layout for Leaflet: explicit rectangles, no Grid size race. */
+ html, body { width:100%; height:100%; overflow:hidden; }
+ .app { position:relative !important; display:block !important; width:100vw !important; height:100vh !important; min-height:720px; overflow:hidden; }
+ header { position:absolute !important; top:0; left:0; right:0; height:74px; grid-column:auto !important; z-index:50; }
+ aside.left { position:absolute !important; top:74px; bottom:0; left:0; width:370px; grid-column:auto !important; grid-row:auto !important; z-index:40; }
+ aside.right { position:absolute !important; top:74px; bottom:0; right:0; width:400px; grid-column:auto !important; grid-row:auto !important; z-index:40; }
+ main.map { position:absolute !important; top:74px; bottom:156px; left:370px; right:400px; width:auto !important; height:auto !important; min-width:640px; min-height:520px; grid-column:auto !important; grid-row:auto !important; z-index:1; }
+ #map { position:absolute !important; inset:0 !important; display:block !important; width:100% !important; height:100% !important; min-height:520px; z-index:1; background:#dce6ef; }
+ .timeline { position:absolute !important; left:370px; right:400px; bottom:0; height:156px; grid-column:auto !important; grid-row:auto !important; z-index:30; }
+ .leaflet-tile-pane { z-index:200 !important; }
+ .leaflet-overlay-pane { z-index:450 !important; }
+ .leaflet-marker-pane { z-index:600 !important; }
+ .leaflet-tooltip-pane { z-index:650 !important; }
+ .leaflet-popup-pane { z-index:700 !important; }
+ @media(max-width:1180px){
+   .app { min-width:1180px; }
+ }
+
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand"><div class="logo">TL</div><div><h1>香港真光小學｜2025-2026 放學校車路線圖</h1><div class="subtitle">冠忠遊覽車有限公司 · 離線 SVG 香港底圖 · 9 條路線多選疊加</div></div></div>
+    <div class="top-actions"><button class="pill" id="fitVisibleBtn">縮放到已選路線</button><button class="pill" id="focusSchoolBtn">返回學校</button><button class="pill primary" onclick="window.print()">匯出 / 列印</button></div>
+  </header>
+
+  <aside class="left">
+    <input class="search" id="searchInput" placeholder="搜尋：站點 / 屋苑 / 時間" />
+    <div class="bulk-actions"><button class="small-btn" id="selectAllBtn">全選路線</button><button class="small-btn" id="clearAllBtn">清空路線</button></div>
+    <div class="section-title"><span>路線列表</span><span id="visibleCount">9/9 已顯示</span></div>
+    <div class="route-list" id="routeList"></div>
+    <div class="section-title"><span>顏色圖例</span><span>R1–R9</span></div>
+    <div class="legend-grid" id="legend"></div>
+  </aside>
+
+  <main class="map">
+    <svg id="map" viewBox="0 0 1000 640" role="img" aria-label="香港離線校車路線圖"></svg>
+    <div class="map-tools"><div class="tool">底圖：OpenStreetMap / CartoDB Positron</div><div class="tool" id="modeText">模式：9 條路線疊加顯示</div><div class="tool">點擊站點或路線查看資料</div></div>
+    <div class="layer-note">註：PDF 只提供站名與時間，沒有經緯度。此版本已用香港真實地圖與近似坐標落點，正式給家長使用前應逐站人工校對。</div>
+  </main>
+
+  <aside class="right">
+    <div class="detail-route" id="detailHeader"></div>
+    <div class="stat-row" id="stats"></div>
+    <div class="section-title"><span>站點與時間</span><span id="detailRouteNo">路線1</span></div>
+    <div class="stop-list" id="stopList"></div>
+  </aside>
+
+  <section class="timeline">
+    <h3>時間軸總覽｜從 15:40 到 17:07</h3>
+    <div class="timebar" id="timebar"></div>
+    <div class="annotation">點擊下方色條可切換右側路線詳情；左側 checkbox 可多選疊加或隱藏路線。</div>
+  </section>
+</div>
+<script>
+const school = { name: '香港真光小學（近似）', lat: 22.2769, lng: 114.1928 };
+const colors = {1:'#e63946',2:'#f77f00',3:'#f9c74f',4:'#90be6d',5:'#43aa8b',6:'#4d96ff',7:'#7b2cbf',8:'#ff6bcb',9:'#8d99ae'};
+const routes = [
+ {id:1, color:colors[1], name:'柴灣／杏花邨', start:'15:55', end:'16:24', stops:[['15:55','太古城海棠閣',22.2866,114.2181],['15:57','太古城翠山閣',22.2869,114.2190],['15:59','太古城中心（匯豐銀行）',22.2861,114.2165],['16:01','太古城安盛閣',22.2851,114.2179],['16:02','太古城金楓閣',22.2842,114.2188],['16:08','康怡花園巴士站',22.2847,114.2149],['16:10','康怡花園賽馬場',22.2826,114.2135],['16:15','藍灣半島上落客區',22.2657,114.2504],['16:19','翠灣街迴旋處',22.2674,114.2467],['16:22','杏花邨的士站',22.2765,114.2407],['16:23','杏花邨大興',22.2769,114.2391],['16:24','杏花邨街市',22.2760,114.2382]]},
+ {id:2, color:colors[2], name:'南區／海怡', start:'15:55', end:'16:28', stops:[['15:55','康怡花園 P 座',22.2843,114.2155],['15:57','利群商場',22.2818,114.2198],['15:58','南豐新邨總站',22.2867,114.2132],['16:01','康怡花園 H,G,E,B,C座',22.2837,114.2142],['16:06','康怡花園 K座',22.2829,114.2160],['16:10','柴灣道33號僑昌',22.2675,114.2362],['16:14','東民街興翠台對面',22.2648,114.2387],['16:15','東民街康翠台口',22.2652,114.2368],['16:17','新翠花園地鐵站（渣打）',22.2643,114.2378],['16:20','英文道文理書院路口',22.2622,114.2360],['16:21','安盛居中興銀行',22.2631,114.2350],['16:28','海怡半島',22.2430,114.1495]]},
+ {id:3, color:colors[3], name:'筲箕灣／西灣河／環翠', start:'15:45', end:'16:25', stops:[['15:45','雲景道翠天大廈',22.2862,114.1944],['15:50','寶馬山花園門口',22.2879,114.1975],['15:52','賽西湖27號',22.2874,114.1999],['15:53','百福道熟食亭',22.2904,114.2009],['15:58','七姊妹診所',22.2892,114.2030],['16:00','七姊妹柏丹孥花園',22.2887,114.2048],['16:02','七姊妹柏明苑幼稚園',22.2882,114.2059],['16:06','英皇道338號華懋廣場',22.2880,114.2077],['16:09','灣仔街街底',22.2829,114.2215],['16:18','愛賢道翠東商場',22.2791,114.2269],['16:20','愛勤道東旭苑南門',22.2803,114.2291],['16:22','筲箕街地鐵站',22.2792,114.2287],['16:23','耀興道天悅廣場巴士站',22.2763,114.2319],['16:25','環翠邨巴士總站',22.2638,114.2366]]},
+ {id:4, color:colors[4], name:'炮台山／北角／東熹苑', start:'15:40', end:'16:20', stops:[['15:40','炮台山道富澤花園路口',22.2833,114.1929],['15:42','炮台山道光超台',22.2846,114.1944],['15:48','電氣道183號',22.2857,114.1922],['15:50','城市花園酒店對面公園',22.2884,114.1946],['15:53','和富中心商場',22.2910,114.1972],['15:57','益華道323號消防宿舍',22.2915,114.2021],['15:59','書坊路紀莊台',22.2911,114.2040],['16:02','新威園巴士站',22.2892,114.2074],['16:05','南怡唐樓後北角前',22.2881,114.2100],['16:10','健景滿第8座',22.2868,114.2118],['16:14','健景道大快活對面',22.2858,114.2130],['16:16','成安街珍香豆腐店',22.2830,114.2216],['16:17','筲箕灣道/太祥街口',22.2811,114.2224],['16:18','興東邨總站',22.2810,114.2248],['16:20','東熹苑聚熹閣小巴站',22.2803,114.2272],['16:20','東熹苑迴旋處',22.2801,114.2283]]},
+ {id:5, color:colors[5], name:'太古城短線', start:'16:00', end:'16:10', stops:[['16:00','太古城海棠閣',22.2866,114.2181],['16:02','太古城翠山閣',22.2869,114.2190],['16:05','太古城中心（匯豐）',22.2861,114.2165],['16:08','太古城安盛閣',22.2851,114.2179],['16:10','太古城金楓閣',22.2842,114.2188]]},
+ {id:6, color:colors[6], name:'天后／中西區／薄扶林', start:'15:43', end:'16:35', stops:[['15:43','天后廟道威景台',22.2816,114.1925],['15:48','天后廟道飛龍台',22.2822,114.1904],['15:50','維園泳池巴士站',22.2829,114.1884],['16:00','中環民祥街遊樂站',22.2865,114.1586],['16:03','干諾道中西港城',22.2876,114.1508],['16:05','干諾道西155號萬兆花園',22.2871,114.1434],['16:07','般咸道聖嘉勒小學',22.2834,114.1410],['16:08','薄扶林村巴士站',22.2674,114.1300],['16:10','薄扶林道薄扶林口',22.2648,114.1290],['16:20','皇后花園1,9,15座路口',22.2602,114.1321],['16:20','薄扶林花園一座',22.2594,114.1347],['16:25','黑寡酒家巴士站',22.2544,114.1357],['16:30','貝沙灣4期噴水池',22.2550,114.1320],['16:35','培僑中學上站',22.2520,114.1295]]},
+ {id:7, color:colors[7], name:'跑馬地／西區／加多近街', start:'15:48', end:'16:15', stops:[['15:48','史釗域道道利琴行',22.2704,114.1842],['15:49','跑馬地黃泥涌大廈',22.2684,114.1858],['15:55','金碧怡大茶葉',22.2847,114.1430],['16:03','皇后街帝后飯店',22.2864,114.1501],['16:07','大迴西湖光街口巴士站',22.2852,114.1412],['16:08','皇后大道西438號加冠飯店',22.2857,114.1375],['16:11','卑路乍街12號',22.2834,114.1315],['16:11','卑路乍街/山市街口',22.2828,114.1295],['16:14','士美菲路47號文光閣',22.2822,114.1280],['16:15','加多近街百年大樓',22.2807,114.1270]]},
+ {id:8, color:colors[8], name:'灣仔／半山／堅尼地城', start:'15:50', end:'16:22', stops:[['15:50','皇后大道東胡忠大廈',22.2772,114.1736],['15:52','皇后大道東合和中心',22.2749,114.1719],['15:54','皇后大道東東英中心',22.2748,114.1702],['15:58','半山蒲魯賢徑9號對面',22.2787,114.1587],['16:04','干德道3號大廈',22.2795,114.1557],['16:05','干德道37號大廈',22.2805,114.1509],['16:10','列堤頓道近旭龢道',22.2820,114.1448],['16:13','堅尼地道麗景台門口',22.2788,114.1637],['16:14','雍仁坊街（MARKET PLACE）',22.2841,114.1395],['16:16','羅便臣道羅兆銘與聖堂',22.2819,114.1465],['16:21','聖若瑟心商科',22.2810,114.1353],['16:22','聖迫公園巴士站',22.2800,114.1320]]},
+ {id:9, color:colors[9], name:'觀塘／將軍澳／日出康城', start:'16:03', end:'17:07', stops:[['16:03','雅景閣馬場小巴站',22.2730,114.1853],['16:10','麗港城東南幼稚園',22.3070,114.2282],['16:13','翠景花園基致幼稚園小巴站對面',22.3061,114.2246],['16:16','凱連1,2座停車場入口',22.3078,114.2260],['16:20','觀塘紀律部隊宿舍合門外',22.3124,114.2258],['16:23','新寶城樓英路7-11便利店',22.3165,114.2658],['16:25','南豐廣場門口巴士站',22.3154,114.2635],['16:31','新都城一期門口小巴站',22.3221,114.2577],['16:33','啟怡花園大快活',22.3171,114.2570],['16:38','將軍澳廣場迴旋處',22.3096,114.2627],['16:40','將軍澳中心OK便利店',22.3074,114.2588],['16:41','天晉一期（銀日酒店）',22.3061,114.2599],['16:45','唐俊街MONTEREY PLACE',22.3048,114.2609],['16:55','就熱灣宿舍球場',22.2942,114.2698],['17:05','將軍澳百勝角路消防宿舍',22.2910,114.2736],['17:07','日出康城總站一期',22.2950,114.2688]]}
+].map(route => ({...route, stops: route.stops.map((s, index) => ({order:index + 1, time:s[0], name:s[1], lat:s[2], lng:s[3]}))}));
+
+const mapSvg = document.getElementById('map');
+let selectedRouteId = 1;
+let visibleRoutes = new Set(routes.map(r => r.id));
+const bounds = { minLng:114.115, maxLng:114.285, minLat:22.235, maxLat:22.330 };
+function x(lng) { return ((lng - bounds.minLng) / (bounds.maxLng - bounds.minLng)) * 1000; }
+function y(lat) { return 640 - ((lat - bounds.minLat) / (bounds.maxLat - bounds.minLat)) * 640; }
+function p(lat,lng){ return `${x(lng).toFixed(1)},${y(lat).toFixed(1)}`; }
+function esc(str){ return String(str).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function minutes(t) { const [h,m] = t.split(':').map(Number); return h * 60 + m; }
+function duration(start, end) { return `${minutes(end) - minutes(start)}分`; }
+function centroid(points){ const xs=points.map(q=>x(q[1])), ys=points.map(q=>y(q[0])); return [xs.reduce((a,b)=>a+b,0)/xs.length, ys.reduce((a,b)=>a+b,0)/ys.length]; }
+function linePoints(route){ return [p(school.lat, school.lng), ...route.stops.map(s => p(s.lat,s.lng))].join(' '); }
+
+const LAND = [
+ {name:'香港島', pts:[[22.286,114.125],[22.293,114.145],[22.291,114.178],[22.288,114.210],[22.282,114.242],[22.270,114.257],[22.253,114.247],[22.242,114.218],[22.236,114.185],[22.241,114.153],[22.258,114.130]]},
+ {name:'九龍', pts:[[22.304,114.145],[22.323,114.166],[22.326,114.205],[22.318,114.232],[22.301,114.225],[22.294,114.195],[22.296,114.162]]},
+ {name:'將軍澳', pts:[[22.321,114.242],[22.330,114.258],[22.322,114.278],[22.302,114.280],[22.289,114.268],[22.299,114.250]]},
+ {name:'鴨脷洲', pts:[[22.248,114.143],[22.249,114.158],[22.242,114.163],[22.236,114.148]]}
+];
+const ROADS = [
+ [[22.286,114.126],[22.286,114.150],[22.286,114.180],[22.287,114.210],[22.280,114.235],[22.276,114.250]],
+ [[22.281,114.130],[22.282,114.150],[22.278,114.172],[22.276,114.190],[22.282,114.216],[22.279,114.232]],
+ [[22.306,114.148],[22.312,114.170],[22.314,114.198],[22.309,114.228],[22.316,114.260]],
+ [[22.252,114.129],[22.260,114.135],[22.267,114.142],[22.280,114.150],[22.286,114.158]],
+ [[22.306,114.258],[22.296,114.268],[22.291,114.274]]
+];
+const LABELS = [
+ ['中環',22.284,114.158],['灣仔',22.276,114.174],['銅鑼灣',22.280,114.184],['北角',22.291,114.199],['太古城',22.286,114.217],['柴灣',22.266,114.237],['薄扶林',22.260,114.132],['香港仔',22.247,114.153],['觀塘',22.312,114.226],['將軍澳',22.308,114.262],['日出康城',22.295,114.269]
+];
+
+function drawMap(){
+ let html = `<defs><filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="5" stdDeviation="5" flood-opacity="0.25"/></filter></defs>`;
+ html += `<rect x="0" y="0" width="1000" height="640" fill="#d9ecf7"/>`;
+ html += `<text x="70" y="95" fill="rgba(40,73,100,.22)" font-size="42" font-weight="900" letter-spacing="8">HONG KONG OFFLINE MAP</text>`;
+ LAND.forEach(area => {
+ html += `<polygon points="${area.pts.map(q=>p(q[0],q[1])).join(' ')}" fill="#eef3e8" stroke="#b4c5b5" stroke-width="2"/>`;
+ const [cx,cy]=centroid(area.pts); html += `<text x="${cx}" y="${cy}" text-anchor="middle" fill="#6f826f" font-size="18" font-weight="800">${area.name}</text>`;
+ });
+ ROADS.forEach(road => html += `<polyline points="${road.map(q=>p(q[0],q[1])).join(' ')}" fill="none" stroke="#ffffff" stroke-width="9" opacity=".8" stroke-linecap="round" stroke-linejoin="round"/><polyline points="${road.map(q=>p(q[0],q[1])).join(' ')}" fill="none" stroke="#c9d3dd" stroke-width="2" opacity=".9" stroke-linecap="round" stroke-linejoin="round"/>`);
+ LABELS.forEach(([name,lat,lng]) => html += `<text x="${x(lng)}" y="${y(lat)}" fill="#41566d" font-size="13" font-weight="700">${name}</text>`);
+ routes.forEach(route => {
+ const display = visibleRoutes.has(route.id) ? '' : 'display="none"';
+ const selected = route.id === selectedRouteId;
+ html += `<g data-route-layer="${route.id}" ${display}>`;
+ html += `<polyline points="${linePoints(route)}" fill="none" stroke="#fff" stroke-width="${selected?15:11}" opacity=".72" stroke-linecap="round" stroke-linejoin="round"/>`;
+ html += `<polyline class="route-svg-line" data-route-id="${route.id}" points="${linePoints(route)}" fill="none" stroke="${route.color}" stroke-width="${selected?8:5}" opacity="${selected?1:.9}" stroke-linecap="round" stroke-linejoin="round"/>`;
+ route.stops.forEach(stop => {
+ const isEnd = stop.order === route.stops.length;
+ html += `<g class="stop-svg" data-stop-route="${route.id}" data-stop-order="${stop.order}" transform="translate(${x(stop.lng).toFixed(1)} ${y(stop.lat).toFixed(1)})"><circle r="${isEnd?10:7}" fill="${route.color}" stroke="#fff" stroke-width="3" filter="url(#shadow)"/><text y="3" text-anchor="middle" font-size="8" font-weight="900" fill="#06111f">${stop.order}</text><title>R${route.id} ${stop.time} ${esc(stop.name)}</title></g>`;
+ });
+ const end=route.stops[route.stops.length-1];
+ html += `<text x="${x(end.lng)+12}" y="${y(end.lat)-10}" fill="#102033" font-size="12" font-weight="900">R${route.id} ${end.time}</text>`;
+ html += `</g>`;
+ });
+ html += `<g transform="translate(${x(school.lng).toFixed(1)} ${y(school.lat).toFixed(1)})"><rect x="-28" y="-22" width="56" height="44" rx="14" fill="#f9c74f" stroke="#fff" stroke-width="4" filter="url(#shadow)"/><text text-anchor="middle" y="5" font-size="15" font-weight="900" fill="#111">學校</text><title>${school.name}</title></g>`;
+ html += `<g id="mapTooltip" style="display:none"><rect x="0" y="0" width="260" height="74" rx="12" fill="rgba(7,17,31,.92)" stroke="rgba(255,255,255,.2)"/><text id="tipTitle" x="14" y="25" fill="#fff" font-size="14" font-weight="800"></text><text id="tipSub" x="14" y="50" fill="#bdd0e8" font-size="12"></text></g>`;
+ mapSvg.innerHTML = html;
+}
+
+const routeList = document.getElementById('routeList');
+const legend = document.getElementById('legend');
+const stopList = document.getElementById('stopList');
+const detailHeader = document.getElementById('detailHeader');
+const stats = document.getElementById('stats');
+const detailRouteNo = document.getElementById('detailRouteNo');
+const visibleCount = document.getElementById('visibleCount');
+const modeText = document.getElementById('modeText');
+const searchInput = document.getElementById('searchInput');
+
+function renderRouteList(filter = '') {
+ routeList.innerHTML = '';
+ const q = filter.trim().toLowerCase();
+ routes.forEach(route => {
+ const searchable = `${route.id} ${route.name} ${route.start} ${route.end} ${route.stops.map(s => `${s.name} ${s.time}`).join(' ')}`.toLowerCase();
+ if (q && !searchable.includes(q)) return;
+ const checked = visibleRoutes.has(route.id) ? 'checked' : '';
+ routeList.insertAdjacentHTML('beforeend', `<div class="route-card ${selectedRouteId === route.id ? 'active' : ''} ${checked ? '' : 'dimmed'}" data-route-id="${route.id}"><div class="route-head"><input class="route-check" type="checkbox" ${checked} data-route-check="${route.id}" /><div class="route-name"><span class="dot" style="background:${route.color}"></span><span>路線 ${route.id}｜${route.name}</span></div><b>${route.stops.length}站</b></div><div class="meta"><span>${route.start} → ${route.end}</span><span>點擊查看 · checkbox 疊加</span></div></div>`);
+ });
+}
+function renderLegend() { legend.innerHTML = ''; routes.forEach(route => legend.insertAdjacentHTML('beforeend', `<div class="legend-item"><span class="dot" style="background:${route.color}"></span>R${route.id}</div>`)); }
+function renderDetail(routeId) {
+ const route = routes.find(r => r.id === routeId) || routes[0];
+ detailHeader.innerHTML = `<div class="big-num" style="background:${route.color}">${route.id}</div><div><h2 style="margin:0">路線 ${route.id}｜${route.name}</h2><div class="subtitle">${route.start} 出發 · ${route.stops.length} 站 · 終點 ${route.end}</div></div>`;
+ stats.innerHTML = `<div class="stat"><b>${duration(route.start, route.end)}</b><span>全程</span></div><div class="stat"><b>${route.stops.length}</b><span>站點</span></div><div class="stat"><b>${visibleRoutes.has(route.id) ? '顯示中' : '已隱藏'}</b><span>圖層狀態</span></div>`;
+ detailRouteNo.textContent = `路線${route.id}`;
+ stopList.innerHTML = '';
+ route.stops.forEach(stop => stopList.insertAdjacentHTML('beforeend', `<div class="stop" data-stop-route="${route.id}" data-stop-order="${stop.order}"><div class="idx" style="background:${route.color}">${stop.order}</div><div class="time">${stop.time}</div><div class="place">${stop.name}</div></div>`));
+}
+function updateVisibleCount() { visibleCount.textContent = `${visibleRoutes.size}/9 已顯示`; modeText.textContent = `模式：${visibleRoutes.size} 條路線疊加顯示 · 離線底圖`; }
+function selectRoute(routeId) { selectedRouteId = routeId; renderRouteList(searchInput.value); renderDetail(routeId); drawMap(); bindMapEvents(); }
+function setRouteVisibility(routeId, visible) { visible ? visibleRoutes.add(routeId) : visibleRoutes.delete(routeId); renderRouteList(searchInput.value); renderDetail(selectedRouteId); updateVisibleCount(); renderTimeline(); drawMap(); bindMapEvents(); }
+function showTooltip(route, stop) {
+ const tip = document.getElementById('mapTooltip'), title = document.getElementById('tipTitle'), sub = document.getElementById('tipSub');
+ if(!tip) return;
+ const tx = Math.min(735, x(stop.lng)+16), ty = Math.max(12, y(stop.lat)-88);
+ tip.setAttribute('transform', `translate(${tx} ${ty})`); tip.style.display = 'block';
+ title.textContent = `R${route.id}｜${stop.order}. ${stop.name}`; sub.textContent = `時間：${stop.time}`;
+}
+function bindMapEvents(){
+ mapSvg.querySelectorAll('.route-svg-line').forEach(el => el.addEventListener('click', () => selectRoute(Number(el.dataset.routeId))));
+ mapSvg.querySelectorAll('.stop-svg').forEach(el => el.addEventListener('click', () => { const route=routes.find(r=>r.id===Number(el.dataset.stopRoute)); const stop=route.stops.find(s=>s.order===Number(el.dataset.stopOrder)); selectRoute(route.id); setTimeout(()=>showTooltip(route, stop),0); }));
+}
+routeList.addEventListener('click', event => { const checkbox = event.target.closest('[data-route-check]'); if (checkbox) { event.stopPropagation(); setRouteVisibility(Number(checkbox.dataset.routeCheck), checkbox.checked); return; } const card = event.target.closest('[data-route-id]'); if (card) selectRoute(Number(card.dataset.routeId)); });
+stopList.addEventListener('click', event => { const row = event.target.closest('[data-stop-order]'); if (!row) return; const route = routes.find(r => r.id === Number(row.dataset.stopRoute)); const stop = route.stops.find(s => s.order === Number(row.dataset.stopOrder)); if (!visibleRoutes.has(route.id)) visibleRoutes.add(route.id); selectRoute(route.id); showTooltip(route, stop); updateVisibleCount(); renderTimeline(); });
+searchInput.addEventListener('input', () => renderRouteList(searchInput.value));
+document.getElementById('selectAllBtn').addEventListener('click', () => { routes.forEach(r => visibleRoutes.add(r.id)); renderRouteList(searchInput.value); renderDetail(selectedRouteId); updateVisibleCount(); renderTimeline(); drawMap(); bindMapEvents(); });
+document.getElementById('clearAllBtn').addEventListener('click', () => { routes.forEach(r => visibleRoutes.delete(r.id)); renderRouteList(searchInput.value); renderDetail(selectedRouteId); updateVisibleCount(); renderTimeline(); drawMap(); bindMapEvents(); });
+document.getElementById('fitVisibleBtn').textContent = '顯示全部路線';
+document.getElementById('fitVisibleBtn').addEventListener('click', () => { routes.forEach(r => visibleRoutes.add(r.id)); updateVisibleCount(); renderTimeline(); drawMap(); bindMapEvents(); });
+document.getElementById('focusSchoolBtn').textContent = '離線地圖';
+document.getElementById('focusSchoolBtn').addEventListener('click', () => alert('此版本為完全離線 SVG 香港底圖，不依賴 Leaflet、OSM 或任何外部網絡資源。'));
+function timePct(t) { return Math.max(0, Math.min(100, ((minutes(t) - minutes('15:40')) / (minutes('17:07') - minutes('15:40'))) * 100)); }
+function renderTimeline() { const tb = document.getElementById('timebar'); tb.innerHTML = ''; ['15:40','16:00','16:20','16:40','17:00'].forEach(t => tb.insertAdjacentHTML('beforeend',`<div class="tick" style="left:${timePct(t)}%"><span>${t}</span></div>`)); routes.forEach((route,i) => { const off = visibleRoutes.has(route.id) ? '' : 'off'; tb.insertAdjacentHTML('beforeend',`<div class="route-chip ${off}" data-timeline-route="${route.id}" title="R${route.id} ${route.start}-${route.end}" style="left:${timePct(route.start)}%;width:${Math.max(3,timePct(route.end)-timePct(route.start))}%;background:${route.color};top:${27+(i%2)*20}px"></div>`); }); }
+document.getElementById('timebar').addEventListener('click', event => { const chip = event.target.closest('[data-timeline-route]'); if (chip) selectRoute(Number(chip.dataset.timelineRoute)); });
+renderLegend(); renderRouteList(); renderDetail(1); renderTimeline(); updateVisibleCount(); drawMap(); bindMapEvents();
+</script>
+</body>
+</html>
