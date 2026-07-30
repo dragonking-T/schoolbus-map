@@ -170,23 +170,33 @@ document.getElementById('amapCodeInput').value = saved.code || '';
 document.getElementById('keyWarning').style.display = 'block';
 }
 function hideKeyPanel() { document.getElementById('keyWarning').style.display = 'none'; }
-function loadAmap() {
+function loadAmap(version = '2.0') {
 const creds = getAmapCredentials();
 if (!creds.key) { setMapStatus('請先填入高德 Key'); showKeyPanel(); return; }
 hideKeyPanel();
-setMapStatus('正在載入高德地圖...');
+setMapStatus(`正在載入高德地圖 JS API ${version}...`);
 if (creds.code) window._AMapSecurityConfig = { securityJsCode: creds.code };
 window.initMapLoadError = function(message) {
+if (version === '2.0') {
+setMapStatus('JS API 2.0 未能初始化，正在嘗試 1.4.15...');
+loadAmap('1.4.15');
+return;
+}
 setMapStatus(message || '高德地圖載入失敗，請檢查 Key / 安全密鑰 / 域名白名單', true);
 showKeyPanel();
 };
+const old = document.querySelector('script[data-amap-js="1"]');
+if (old) old.remove();
+window.AMap = undefined;
+map = null;
 const script = document.createElement('script');
-script.src = `https://webapi.amap.com/maps?v=2.0&key=${encodeURIComponent(creds.key)}&callback=initMap`;
-script.onerror = () => window.initMapLoadError('無法連接高德地圖 JS API，請檢查網絡或 Key 設置');
+script.dataset.amapJs = '1';
+script.src = `https://webapi.amap.com/maps?v=${version}&key=${encodeURIComponent(creds.key)}&callback=initMap`;
+script.onerror = () => window.initMapLoadError(`無法連接高德地圖 JS API ${version}，請檢查網絡或 Key 設置`);
 script.onload = () => {
 setTimeout(() => {
-if (!window.AMap || !map) window.initMapLoadError('高德腳本已返回但地圖未初始化，通常是 Key / 安全密鑰 / 白名單錯誤');
-}, 2500);
+if (!window.AMap || !map) window.initMapLoadError(`高德 JS API ${version} 已返回但地圖未初始化，通常是 Key / 安全密鑰 / 白名單錯誤`);
+}, 3000);
 };
 document.head.appendChild(script);
 }
