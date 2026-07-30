@@ -52,6 +52,8 @@
  .key-input:focus { border-color:#1677ff; box-shadow:0 0 0 3px rgba(22,119,255,.18); }
  .key-actions { display:flex; gap:10px; margin-top:14px; flex-wrap:wrap; }
  .key-help { color:var(--muted); font-size:12px; line-height:1.6; }
+ .map-status { position:absolute; right:18px; top:18px; z-index:11; max-width:360px; background:rgba(7,17,31,.86); color:#fff; border:1px solid rgba(255,255,255,.15); border-radius:14px; padding:10px 12px; font-size:13px; box-shadow:0 10px 25px rgba(0,0,0,.22); }
+ .map-status.error { background:rgba(145,32,32,.92); }
     .detail-route { display:flex; align-items:center; gap:12px; }
     .big-num { width:54px; height:54px; border-radius:18px; display:grid; place-items:center; font-weight:900; font-size:24px; color:#06111f; flex:none; }
     .stat-row { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:16px 0; }
@@ -77,7 +79,7 @@
 <div class="app">
   <header>
     <div class="brand"><div class="logo">TL</div><div><h1>香港真光小學｜2025-2026 放學校車路線圖</h1><div class="subtitle">高德地圖在線版 · 9 條路線多選疊加 · 站點與時間標註</div></div></div>
-    <div class="top-actions"><button class="pill" id="fitVisibleBtn">縮放到已選路線</button><button class="pill" id="focusSchoolBtn">返回學校</button><button class="pill primary" onclick="window.print()">匯出 / 列印</button></div>
+    <div class="top-actions"><button class="pill" id="fitVisibleBtn">縮放到已選路線</button><button class="pill" id="focusSchoolBtn">返回學校</button><button class="pill" id="resetAmapKeyBtn">重新輸入Key</button><button class="pill primary" onclick="window.print()">匯出 / 列印</button></div>
   </header>
   <aside class="left">
     <input class="search" id="searchInput" placeholder="搜尋：站點 / 屋苑 / 時間" />
@@ -90,6 +92,7 @@
   <main class="map-wrap">
     <div id="map"></div>
     <div class="map-note"><div class="tool">底圖：高德地圖 JS API</div><div class="tool" id="modeText">模式：9 條路線疊加顯示</div><div class="tool">點擊站點或路線查看資料</div></div>
+ <div class="map-status" id="mapStatus">等待高德地圖 Key...</div>
     <div class="key-warning" id="keyWarning"><h2>需要填入高德 Web 端 Key</h2><p>請到高德開放平台申請 JS API Key，然後把本文件頂部腳本中的：</p><p><code>const AMAP_KEY = '請填入你的高德Web端Key';</code></p><p>改成你的 Key。GitHub Pages 上線時，需要在高德控制台配置安全密鑰或域名白名單。</p></div>
   </main>
   <aside class="right">
@@ -130,6 +133,20 @@ const markerOverlays = new Map();
 let selectedRouteId = 1;
 let visibleRoutes = new Set(routes.map(r => r.id));
 
+function setMapStatus(message, isError = false) {
+const el = document.getElementById('mapStatus');
+if (!el) return;
+el.textContent = message;
+el.classList.toggle('error', !!isError);
+el.style.display = message ? 'block' : 'none';
+}
+window.addEventListener('error', event => {
+const msg = String(event.message || '');
+if (msg.includes('AMap') || msg.includes('高德') || msg.includes('Invalid') || msg.includes('INVALID') || msg.includes('USERKEY')) {
+setMapStatus(`高德地圖載入錯誤：${msg}`, true);
+showKeyPanel();
+}
+});
 function getAmapCredentials() {
 const params = new URLSearchParams(window.location.search);
 const urlKey = params.get('amapKey') || params.get('key') || '';
@@ -155,12 +172,22 @@ document.getElementById('keyWarning').style.display = 'block';
 function hideKeyPanel() { document.getElementById('keyWarning').style.display = 'none'; }
 function loadAmap() {
 const creds = getAmapCredentials();
-if (!creds.key) { showKeyPanel(); return; }
+if (!creds.key) { setMapStatus('請先填入高德 Key'); showKeyPanel(); return; }
 hideKeyPanel();
+setMapStatus('正在載入高德地圖...');
 if (creds.code) window._AMapSecurityConfig = { securityJsCode: creds.code };
+window.initMapLoadError = function(message) {
+setMapStatus(message || '高德地圖載入失敗，請檢查 Key / 安全密鑰 / 域名白名單', true);
+showKeyPanel();
+};
 const script = document.createElement('script');
 script.src = `https://webapi.amap.com/maps?v=2.0&key=${encodeURIComponent(creds.key)}&callback=initMap`;
-script.onerror = () => { showKeyPanel(); };
+script.onerror = () => window.initMapLoadError('無法連接高德地圖 JS API，請檢查網絡或 Key 設置');
+script.onload = () => {
+setTimeout(() => {
+if (!window.AMap || !map) window.initMapLoadError('高德腳本已返回但地圖未初始化，通常是 Key / 安全密鑰 / 白名單錯誤');
+}, 2500);
+};
 document.head.appendChild(script);
 }
 window.initMap = function initMap() {
@@ -288,6 +315,10 @@ localStorage.removeItem('schoolbus.amapCode');
 document.getElementById('amapKeyInput').value = '';
 document.getElementById('amapCodeInput').value = '';
 alert('已清除本機保存的高德 Key');
+});
+document.getElementById('resetAmapKeyBtn').addEventListener('click', () => {
+showKeyPanel();
+setMapStatus('請重新輸入高德 Key');
 });
 renderLegend(); renderAll(); loadAmap();
 </script>
