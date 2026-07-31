@@ -200,16 +200,26 @@ window.AMap = undefined;
 map = null;
 const script = document.createElement('script');
 script.dataset.amapJs = '1';
-script.src = `https://webapi.amap.com/maps?v=${version}&key=${encodeURIComponent(creds.key)}&callback=initMap`;
+script.src = `https://webapi.amap.com/maps?v=${version}&key=${encodeURIComponent(creds.key)}`;
 script.onerror = () => window.initMapLoadError(`無法連接高德地圖 JS API ${version}，請檢查網絡或 Key 設置`);
 script.onload = () => {
-setTimeout(() => {
-if (!window.AMap || !map) window.initMapLoadError(`高德 JS API ${version} 已返回但地圖未初始化，通常是 Key / 安全密鑰 / 白名單錯誤`);
-}, 3000);
+let attempts = 0;
+const timer = setInterval(() => {
+attempts += 1;
+if (window.AMap) {
+clearInterval(timer);
+initMap();
+return;
+}
+if (attempts >= 30) {
+clearInterval(timer);
+window.initMapLoadError(`高德 JS API ${version} 已載入但 AMap 對象未就緒，請檢查 Key / 安全密鑰 / 白名單`);
+}
+}, 100);
 };
 document.head.appendChild(script);
 }
-window.initMap = function initMap() {
+function initMap() {
   map = new AMap.Map('map', {
     viewMode: '2D', zoom: 12, center: [114.195, 22.285], mapStyle: 'amap://styles/normal', resizeEnable: true
   });
@@ -223,7 +233,8 @@ window.initMap = function initMap() {
   routes.forEach(createRouteOverlay);
   renderAll();
   fitVisible();
-};
+}
+window.initMap = initMap;
 function createRouteOverlay(route) {
   const path = [[school.lng, school.lat], ...route.stops.map(s => [s.lng, s.lat])];
   const halo = new AMap.Polyline({ path, strokeColor:'#ffffff', strokeWeight:11, strokeOpacity:.75, zIndex:80, lineJoin:'round', lineCap:'round' });
