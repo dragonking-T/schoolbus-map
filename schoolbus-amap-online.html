@@ -11,7 +11,7 @@ const AMAP_KEY='',AMAP_SECURITY_JSCODE='';
 const SCHOOL={name:'香港真光中學小學部（大坑道/利群道校車點）',address:'香港真光中學小學部校車點',lng:114.199452,lat:22.273226};
 const EXTRA_SCHOOLS=[{name:'聖士提反女子中學',address:'香港聖士提反女子中學',lng:114.149719,lat:22.28109}];
 const COLORS=['#e63946','#f77f00','#f9c74f','#90be6d','#43aa8b','#4d96ff','#7b2cbf','#ff6bcb','#8d99ae','#00b4d8','#b56576','#06d6a0','#ef476f','#118ab2'];
-function makeRoute(id,stops,opt={}){return{id,name:opt.name||`路線 ${id}`,note:opt.note||'',color:COLORS[(id-1)%COLORS.length],stops:stops.map((s,i)=>({order:i+1,time:s[0],name:s[1],fare:s[2]||'',address:`${s[1]} 香港`}))}}
+function makeRoute(id,stops,opt={}){return{id,name:opt.name||`路線 ${id}`,note:opt.note||'',color:COLORS[(id-1)%COLORS.length],stops:stops.map((s,i)=>({order:i+1,time:s[0],name:s[1],fare:s[2]||'',address:`${normalizeQueryName(s[1])} 香港`}))}}
 
 
 const COORD_OVERRIDES={
@@ -61,7 +61,8 @@ const COORD_OVERRIDES={
 '漁灣邨郵政局':[114.2382,22.2638],
 '峰華村峰華樓凹位':[114.2364,22.2582]
 };
-function applyCoord(name,address){return COORD_OVERRIDES[name]||COORD_OVERRIDES[address]||hintCoord(name)}
+function normalizeQueryName(name){let q=String(name);q=q.replace(/（[^）]*(對面|对面|上橋|電車路|咪錶位|小巴站|巴士站|的士站|渣打|惠康|萬寧|假日酒店|銀日酒店)[^）]*）/g,'');q=q.replace(/\([^)]*(對面|对面|上橋|電車路|咪錶位|小巴站|巴士站|的士站|渣打|惠康|萬寧|假日酒店|銀日酒店)[^)]*\)/g,'');q=q.replace(/(對面|对面|門口|门口|閘口|闸口|路口|街口|橋底|桥底|小巴站|巴士站|的士站|終止牌前|終止牌後|终止牌前|终止牌后|上落客區|上落客区|停車場入口|停车场入口|避車處|避车处|凹位|車頭向上|车头向上)/g,'');q=q.replace(/近.*$/,'').replace(/旁.*$/,'').replace(/前.*$/,'').replace(/後.*$/,'');q=q.replace(/、.*$/,'');q=q.replace(/\s+/g,' ').trim();return q||name}
+function applyCoord(name,address){return COORD_OVERRIDES[name]||COORD_OVERRIDES[address]||COORD_OVERRIDES[normalizeQueryName(name)]||hintCoord(name)||hintCoord(normalizeQueryName(name))}
 
 const PLACE_HINTS={
 '太古城':[114.218,22.286],'康怡':[114.216,22.284],'南豐新邨':[114.213,22.286],'鯉景灣':[114.221,22.284],'杏花邨':[114.239,22.276],'藍灣半島':[114.250,22.266],'柴灣':[114.236,22.265],'峰華':[114.237,22.262],'富欣花園':[114.247,22.265],'富怡花園':[114.247,22.266],'翠灣街':[114.246,22.267],'亞公岩':[114.248,22.274],
