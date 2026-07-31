@@ -93,7 +93,16 @@
     <div id="map"></div>
     <div class="map-note"><div class="tool">底圖：高德地圖 JS API</div><div class="tool" id="modeText">模式：9 條路線疊加顯示</div><div class="tool">點擊站點或路線查看資料</div></div>
  <div class="map-status" id="mapStatus">等待高德地圖 Key...</div>
-    <div class="key-warning" id="keyWarning"><h2>需要填入高德 Web 端 Key</h2><p>請到高德開放平台申請 JS API Key，然後把本文件頂部腳本中的：</p><p><code>const AMAP_KEY = '請填入你的高德Web端Key';</code></p><p>改成你的 Key。GitHub Pages 上線時，需要在高德控制台配置安全密鑰或域名白名單。</p></div>
+    <div class="key-warning" id="keyWarning">
+ <h2>填入高德 Web 端 Key</h2>
+ <p>Key 只會保存在你當前瀏覽器的 <code>localStorage</code>，不會提交到 GitHub。</p>
+ <label>AMap Key</label>
+ <input class="key-input" id="amapKeyInput" autocomplete="off" placeholder="請輸入高德 Web 端 Key" />
+ <label>安全密鑰 jscode</label>
+ <input class="key-input" id="amapCodeInput" autocomplete="off" placeholder="請輸入安全密鑰 jscode，可留空" />
+ <div class="key-actions"><button class="pill primary" id="saveAmapKeyBtn">保存並載入地圖</button><button class="pill" id="clearAmapKeyBtn">清除本機保存</button></div>
+ <p class="key-help">也可在網址後拼接：<br/><code>?amapKey=你的Key&amp;amapCode=你的安全密鑰</code></p>
+</div>
   </main>
   <aside class="right">
     <div class="detail-route" id="detailHeader"></div>
@@ -311,26 +320,31 @@ document.getElementById('clearAllBtn').addEventListener('click', () => routes.fo
 document.getElementById('fitVisibleBtn').addEventListener('click', fitVisible);
 document.getElementById('focusSchoolBtn').addEventListener('click', () => map ? map.setZoomAndCenter(15, [school.lng, school.lat]) : null);
 document.getElementById('timebar').addEventListener('click', e => { const chip = e.target.closest('[data-timeline-route]'); if (chip) selectRoute(Number(chip.dataset.timelineRoute), true); });
-document.getElementById('saveAmapKeyBtn').addEventListener('click', () => {
-const key = document.getElementById('amapKeyInput').value.trim();
-const code = document.getElementById('amapCodeInput').value.trim();
+function bindKeyControls() {
+const saveBtn = document.getElementById('saveAmapKeyBtn');
+const clearBtn = document.getElementById('clearAmapKeyBtn');
+const resetBtn = document.getElementById('resetAmapKeyBtn');
+if (saveBtn) saveBtn.addEventListener('click', () => {
+const key = (document.getElementById('amapKeyInput')?.value || '').trim();
+const code = (document.getElementById('amapCodeInput')?.value || '').trim();
 if (!key) { alert('請先輸入高德 Web 端 Key'); return; }
 localStorage.setItem('schoolbus.amapKey', key);
 localStorage.setItem('schoolbus.amapCode', code);
 window.location.reload();
 });
-document.getElementById('clearAmapKeyBtn').addEventListener('click', () => {
+if (clearBtn) clearBtn.addEventListener('click', () => {
 localStorage.removeItem('schoolbus.amapKey');
 localStorage.removeItem('schoolbus.amapCode');
-document.getElementById('amapKeyInput').value = '';
-document.getElementById('amapCodeInput').value = '';
+if (document.getElementById('amapKeyInput')) document.getElementById('amapKeyInput').value = '';
+if (document.getElementById('amapCodeInput')) document.getElementById('amapCodeInput').value = '';
 alert('已清除本機保存的高德 Key');
 });
-document.getElementById('resetAmapKeyBtn').addEventListener('click', () => {
+if (resetBtn) resetBtn.addEventListener('click', () => {
 showKeyPanel();
 setMapStatus('請重新輸入高德 Key');
 });
-renderLegend(); renderAll(); loadAmap();
+}
+bindKeyControls(); renderLegend(); renderAll(); loadAmap();
 </script>
 </body>
 </html>
